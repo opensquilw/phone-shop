@@ -9,27 +9,184 @@
     "noticeEn": "Prices update daily. Please pay within 2 hours of ordering and send the payment screenshot on WhatsApp.",
     "currency": "HK$",
     "delivery": [
-      { "id": "pickup", "zh": "門市自取／面交", "en": "Pickup / meet-up", "fee": 0 },
-      { "id": "sf", "zh": "順豐到付", "en": "SF Express (pay on delivery)", "fee": 0 },
-      { "id": "courier", "zh": "送貨上門（本地）", "en": "Local delivery", "fee": 60 }
+      {
+        "id": "pickup",
+        "zh": "門市自取／面交",
+        "en": "Pickup / meet-up",
+        "fee": 0
+      },
+      {
+        "id": "sf",
+        "zh": "順豐到付",
+        "en": "SF Express (pay on delivery)",
+        "fee": 0
+      },
+      {
+        "id": "courier",
+        "zh": "送貨上門（本地）",
+        "en": "Local delivery",
+        "fee": 60
+      }
     ],
     "payments": {
-      "payme": { "enabled": true, "link": "https://payme.hsbc/yourshop", "qr": "" },
-      "alipay": { "enabled": true, "id": "", "qr": "" },
-      "fps": { "enabled": true, "id": "9000 0000", "name": "CHAN TAI MAN", "bank": "HSBC" },
-      "bank": { "enabled": true, "bank": "HSBC 匯豐", "account": "004-123-456789-001", "holder": "CHAN TAI MAN" },
-      "octopus": { "enabled": false, "id": "" },
-      "wechat": { "enabled": false, "id": "", "qr": "" }
+      "payme": {
+        "enabled": true,
+        "link": "https://payme.hsbc/yourshop",
+        "qr": ""
+      },
+      "alipay": {
+        "enabled": true,
+        "id": "",
+        "qr": ""
+      },
+      "fps": {
+        "enabled": true,
+        "id": "9000 0000",
+        "name": "CHAN TAI MAN",
+        "bank": "HSBC"
+      },
+      "bank": {
+        "enabled": true,
+        "bank": "HSBC 匯豐",
+        "account": "004-123-456789-001",
+        "holder": "CHAN TAI MAN"
+      },
+      "octopus": {
+        "enabled": false,
+        "id": ""
+      },
+      "wechat": {
+        "enabled": false,
+        "id": "",
+        "qr": ""
+      }
     }
   },
   "products": [
-    { "id": "d1", "brand": "Apple", "model": "iPhone 17 Pro Max", "storage": 256, "colours": ["Black", "White", "Desert Titanium"], "price": 9880, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d2", "brand": "Apple", "model": "iPhone 17 Pro Max", "storage": 512, "colours": ["Natural Titanium"], "price": 11280, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d3", "brand": "Apple", "model": "iPhone 17", "storage": 128, "colours": ["Blue", "Black"], "price": 7680, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d4", "brand": "Samsung", "model": "Galaxy S25 Ultra", "storage": 256, "colours": ["Black", "Silver"], "price": 7980, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d5", "brand": "Samsung", "model": "Galaxy Z Fold7", "storage": 512, "colours": ["Silver"], "price": 13800, "stock": "order", "photo": "", "note": "預訂約 3-5 日", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d6", "brand": "Xiaomi", "model": "小米15", "storage": 256, "colours": ["White", "Black"], "price": 4280, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d7", "brand": "Google", "model": "Pixel 10 Pro", "storage": 128, "colours": ["Obsidian"], "price": 6780, "stock": "in", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" },
-    { "id": "d8", "brand": "Huawei", "model": "Pura 80 Ultra", "storage": 512, "colours": ["Gold"], "price": 9480, "stock": "out", "photo": "", "note": "", "hidden": false, "updated": "2026-09-14" }
+    {
+      "id": "d1",
+      "brand": "Apple",
+      "model": "iPhone 17 Pro Max",
+      "storage": 256,
+      "colours": [
+        "Black",
+        "White",
+        "Desert Titanium"
+      ],
+      "price": 9880,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d2",
+      "brand": "Apple",
+      "model": "iPhone 17 Pro Max",
+      "storage": 512,
+      "colours": [
+        "Natural Titanium"
+      ],
+      "price": 11280,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d3",
+      "brand": "Apple",
+      "model": "iPhone 17",
+      "storage": 128,
+      "colours": [
+        "Blue",
+        "Black"
+      ],
+      "price": 7680,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d4",
+      "brand": "Samsung",
+      "model": "Galaxy S25 Ultra",
+      "storage": 256,
+      "colours": [
+        "Black",
+        "Silver"
+      ],
+      "price": 7980,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d5",
+      "brand": "Samsung",
+      "model": "Galaxy Z Fold7",
+      "storage": 512,
+      "colours": [
+        "Silver"
+      ],
+      "price": 13800,
+      "stock": "order",
+      "photo": "",
+      "note": "預訂約 3-5 日",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d6",
+      "brand": "Xiaomi",
+      "model": "小米15",
+      "storage": 256,
+      "colours": [
+        "White",
+        "Black"
+      ],
+      "price": 4280,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d7",
+      "brand": "Google",
+      "model": "Pixel 10 Pro",
+      "storage": 128,
+      "colours": [
+        "Obsidian"
+      ],
+      "price": 6780,
+      "stock": "in",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    },
+    {
+      "id": "d8",
+      "brand": "Huawei",
+      "model": "Pura 80 Ultra",
+      "storage": 512,
+      "colours": [
+        "Gold"
+      ],
+      "price": 9480,
+      "stock": "out",
+      "photo": "",
+      "note": "",
+      "hidden": false,
+      "updated": "2026-09-14"
+    }
   ]
 }
