@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>機舖 PhoneShop</title>
+<meta name="theme-color" content="#0f7b6c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="row">
+    <div class="brand grow"><img src="icons/icon-192.png" alt=""><span id="shopName">機舖</span></div>
+    <button class="icon-btn" id="btnLang" title="Language">EN</button>
+    <button class="icon-btn" id="btnTheme" title="Theme">🌗</button>
+    <button class="icon-btn" id="btnOrders" title="My orders">🧾</button>
+    <button class="icon-btn" id="btnCart" title="Cart">🛒<span class="badge hidden" id="cartCount">0</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="notice hidden" id="notice"></div>
+  <div class="search"><span>🔍</span><input id="q" type="search" data-i18n-ph="search" placeholder="搜尋型號…"></div>
+  <div class="chips" id="brands"></div>
+  <div class="row" style="justify-content:space-between;margin:6px 0 10px">
+    <span class="small muted" id="countInfo"></span>
+    <select id="sort" style="width:auto;padding:6px 10px;font-size:13px">
+      <option value="default" data-i18n="sortDefault">預設排序</option>
+      <option value="priceAsc" data-i18n="sortAsc">價錢：低至高</option>
+      <option value="priceDesc" data-i18n="sortDesc">價錢：高至低</option>
+    </select>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty hidden" id="empty"><div class="big">📱</div><div data-i18n="empty">暫時未有貨品</div></div>
+  <p class="small muted" style="text-align:center;margin-top:30px" id="updatedInfo"></p>
+</main>
+
+<div class="fab"><a class="btn wa" id="waFab" target="_blank" rel="noopener">💬 <span data-i18n="askWa">WhatsApp 查詢</span></a></div>
+
+<div class="cartbar" id="cartbar">
+  <div><div class="small muted" id="cartbarCount"></div><div class="price" id="cartbarTotal"></div></div>
+  <button class="btn primary" id="cartbarBtn" data-i18n="viewCart">查看購物車</button>
+</div>
+
+<!-- product sheet -->
+<div class="sheet-bg" id="productSheet"><div class="sheet">
+  <div class="handle"></div>
+  <div id="productBody"></div>
+</div></div>
+
+<!-- cart / checkout sheet -->
+<div class="sheet-bg" id="cartSheet"><div class="sheet">
+  <div class="handle"></div>
+  <h2 data-i18n="cart">購物車</h2>
+  <div id="cartBody"></div>
+</div></div>
+
+<!-- order / payment sheet -->
+<div class="sheet-bg" id="orderSheet"><div class="sheet">
+  <div class="handle"></div>
+  <div id="orderBody"></div>
+</div></div>
+
+<!-- my orders sheet -->
+<div class="sheet-bg" id="ordersSheet"><div class="sheet">
+  <div class="handle"></div>
+  <h2 data-i18n="myOrders">我的訂單</h2>
+  <div id="ordersBody"></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<script src="parser.js"></script>
+<script src="shop.js"></script>
+</body>
+</html>

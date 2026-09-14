@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>機舖 · 後台</title>
+<meta name="theme-color" content="#0f7b6c">
+<link rel="stylesheet" href="style.css">
+<meta name="robots" content="noindex">
+</head>
+<body>
+<header class="topbar">
+  <div class="row">
+    <div class="brand grow"><img src="icons/icon-192.png" alt=""><span>機舖 · 後台</span></div>
+    <span class="stat" id="statCount">0 件</span>
+    <a class="btn sm" href="index.html" target="_blank">👀 預覽舖頭</a>
+    <button class="icon-btn" id="btnTheme">🌗</button>
+  </div>
+</header>
+
+<main class="admin">
+  <div class="tabs">
+    <button class="on" data-tab="paste">📋 貼上訊息</button>
+    <button data-tab="products">📱 貨品</button>
+    <button data-tab="photos">🖼️ 相片</button>
+    <button data-tab="settings">⚙️ 舖頭 & 付款</button>
+    <button data-tab="publish">🚀 發佈</button>
+  </div>
+
+  <!-- PASTE -->
+  <section id="tab-paste">
+    <div class="two">
+      <div class="card">
+        <h3>1. 貼上 WhatsApp 群組訊息</h3>
+        <p class="help">直接由 WhatsApp 複製訊息（或匯出對話 .txt）貼落嚟。支援格式例如：<br>
+          <code>iPhone 17 Pro Max</code> → <code>256 黑/白 $9200</code>、<code>小米15 256/512 3900/4400</code>、<code>Samsung S25 Ultra 256GB 黑 7400 現貨</code></p>
+        <textarea id="pasteBox" style="min-height:260px;font-family:ui-monospace,Menlo,monospace;font-size:13px" placeholder="貼上訊息…"></textarea>
+        <div class="row flow" style="margin-top:8px">
+          <label style="margin:0">最低價錢（低過此數當唔係價錢）</label><input id="minPrice" type="number" value="500" style="width:90px">
+          <button class="btn primary" id="btnParse">🔍 解析</button>
+          <button class="btn ghost" id="btnClearPaste">清除</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>2. 加價規則</h3>
+        <p class="help">批發價（成本）＋ 加價 ＝ 舖頭售價。客人只會見到售價。</p>
+        <div class="row flow">
+          <div><label>方式</label><select id="mkMode" style="width:140px"><option value="percent">百分比 %</option><option value="fixed">固定金額 $</option></select></div>
+          <div><label>數值</label><input id="mkValue" type="number" value="8" style="width:100px"></div>
+          <div><label>取整至</label><select id="mkRound" style="width:110px"><option value="1">$1</option><option value="10" selected>$10</option><option value="50">$50</option><option value="100">$100</option></select></div>
+          <div><label>尾數</label><select id="mkTail" style="width:110px"><option value="0">正常</option><option value="8">尾數 8（如 9,888）</option><option value="9">尾數 9（如 9,899）</option></select></div>
+        </div>
+        <p class="help" style="margin-top:8px">例子：成本 $9,200 → 售價 <b id="mkExample"></b></p>
+        <hr>
+        <h3>3. 解析結果</h3>
+        <p class="help" id="parseInfo">未解析。</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px" id="parsedCard" hidden>
+      <div class="row flow" style="justify-content:space-between">
+        <h3>解析出嘅貨品 <span class="muted small">（可以先修改，再加入）</span></h3>
+        <div class="row"><button class="btn ghost sm" id="btnSelAll">全選/取消</button><button class="btn primary" id="btnMerge">➕ 加入貨品清單</button></div>
+      </div>
+      <div class="tablewrap"><table class="tbl" id="parsedTbl"></table></div>
+      <details style="margin-top:10px"><summary class="small muted">略過嘅行（冇價錢／認唔到）</summary><pre class="small muted" id="skippedBox" style="white-space:pre-wrap"></pre></details>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="tab-products" hidden>
+    <div class="card">
+      <div class="row flow" style="justify-content:space-between">
+        <div class="row flow"><input id="pq" type="search" placeholder="搜尋…" style="width:180px"><select id="pBrand" style="width:auto"><option value="">全部品牌</option></select></div>
+        <div class="row flow">
+          <button class="btn sm" id="btnAddRow">＋ 手動新增</button>
+          <button class="btn sm" id="btnRecalc">🔁 用加價規則重算全部售價</button>
+          <button class="btn sm danger" id="btnDelDemo">刪除示範貨品</button>
+          <button class="btn sm danger" id="btnDelAll">清空全部</button>
+        </div>
+      </div>
+      <p class="help">售價欄手動改過會鎖住（🔒），重算時唔會覆蓋；撳 🔒 可解鎖。「隱藏」嘅貨品唔會喺舖頭顯示。</p>
+      <div class="tablewrap"><table class="tbl" id="prodTbl"></table></div>
+    </div>
+  </section>
+
+  <!-- PHOTOS -->
+  <section id="tab-photos" hidden>
+    <div class="card">
+      <h3>WhatsApp 相片 → 貨品</h3>
+      <p class="help">由 WhatsApp 儲存相片後，一次過拖入嚟（或撳選擇），然後揀返每張相屬於邊件貨品。相片會自動壓縮。</p>
+      <div class="drop" id="photoDrop">📥 拖放相片到呢度，或 <label style="display:inline;color:var(--accent);cursor:pointer;margin:0">選擇檔案<input type="file" id="photoInput" accept="image/*" multiple hidden></label></div>
+      <div class="grid" id="photoPool" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" hidden>
+    <div class="two">
+      <div class="card">
+        <h3>舖頭資料</h3>
+        <label>舖頭名（中）</label><input id="sName">
+        <label>Shop name (EN)</label><input id="sNameEn">
+        <label>WhatsApp 號碼（連區號，例如 85291234567）</label><input id="sWa" inputmode="tel">
+        <label>貨幣符號</label><input id="sCur" value="HK$" style="width:100px">
+        <label>公告（中）</label><textarea id="sNotice" style="min-height:70px"></textarea>
+        <label>Notice (EN)</label><textarea id="sNoticeEn" style="min-height:70px"></textarea>
+        <h3 style="margin-top:16px">收貨方式</h3>
+        <div id="dlvList"></div>
+        <button class="btn sm" id="btnAddDlv" style="margin-top:6px">＋ 新增收貨方式</button>
+      </div>
+      <div class="card">
+        <h3>付款方式</h3>
+        <p class="help">落單後客人會見到已啟用嘅付款方式。QR Code 可以上載你 PayMe / AlipayHK App 入面嘅收款 QR 截圖。</p>
+        <div id="payList"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="btnSaveSettings">💾 儲存設定</button></div>
+  </section>
+
+  <!-- PUBLISH -->
+  <section id="tab-publish" hidden>
+    <div class="two">
+      <div class="card">
+        <h3>方法 A：直接發佈到 GitHub Pages</h3>
+        <p class="help">喺 GitHub 建立一個 Fine-grained token（只需要呢個 repo 嘅 <code>Contents: Read and write</code> 權限），貼喺下面。Token 只會儲存喺呢部機嘅瀏覽器。</p>
+        <label>GitHub 用戶名 / 組織</label><input id="ghOwner" placeholder="opensquilw">
+        <label>Repository</label><input id="ghRepo" placeholder="phone-shop">
+        <label>Branch</label><input id="ghBranch" value="main">
+        <label>檔案路徑</label><input id="ghPath" value="data/catalog.json">
+        <label>Token</label><input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off">
+        <div class="row" style="margin-top:12px"><button class="btn primary" id="btnPublish">🚀 發佈到 GitHub</button><span class="small muted" id="pubStatus"></span></div>
+        <p class="help" style="margin-top:8px">發佈後約 1 分鐘，客人重新開舖頭連結就會見到新價錢。</p>
+      </div>
+      <div class="card">
+        <h3>方法 B：下載檔案自己上載</h3>
+        <p class="help">下載 <code>catalog.json</code>，放入網站嘅 <code>data/</code> 資料夾覆蓋原檔，再 push 上 GitHub。</p>
+        <button class="btn" id="btnDownload">⬇️ 下載 catalog.json</button>
+        <hr>
+        <h3>備份 / 還原（包括成本價）</h3>
+        <p class="help">後台資料（含批發價、加價規則、token）只儲存喺呢部機。換機或清除瀏覽器前請先備份。</p>
+        <div class="row flow">
+          <button class="btn" id="btnBackup">⬇️ 下載備份</button>
+          <label class="btn" style="margin:0">⬆️ 還原備份<input type="file" id="restoreInput" accept="application/json" hidden></label>
+          <button class="btn ghost" id="btnPullLive">🌐 由網上 catalog.json 載入貨品</button>
+        </div>
+        <p class="small muted" style="margin-top:10px" id="sizeInfo"></p>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="parser.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
