@@ -22,22 +22,39 @@
   let S = null;
   function defaults() {
     return { shop: { name: "機舖", nameEn: "PhoneShop", whatsapp: "", notice: "", noticeEn: "", currency: "HK$", delivery: [{ id: "pickup", zh: "門市自取／面交", en: "Pickup / meet-up", fee: 0 }], payments: {} },
-      products: [], markup: { mode: "percent", value: 8, round: 10, tail: 0 }, github: { owner: "", repo: "", branch: "main", path: "data/catalog.json", token: "" }, pool: [] };
+      products: [], costs: {}, markup: { mode: "percent", value: 8, round: 10, tail: 0 }, minPrice: 500, github: { owner: "opensquilw", repo: "phone-shop", branch: "main", path: "data/catalog.json", token: "" }, pool: [], review: [], dirty: false, liveUpdated: "" };
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast("⚠️ 儲存失敗：資料太大（相片太多）。請減少相片。"); } updateStat(); }
+  function save(markDirty = true) {
+    if (markDirty) S.dirty = true;
+    S.products.forEach((p) => { if (p.cost != null) S.costs[p.id] = p.cost; });
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast("⚠️ 儲存失敗：資料太大（相片太多）。請減少相片。"); } updateStat();
+  }
+  async function fetchLive(name) { return (await fetch(`data/${name}?t=` + Date.now(), { cache: "no-store" })).json(); }
   async function init() {
     const raw = localStorage.getItem(KEY);
-    if (raw) { S = Object.assign(defaults(), JSON.parse(raw)); }
-    else {
-      S = defaults();
-      try { const c = await (await fetch("data/catalog.json?t=" + Date.now(), { cache: "no-store" })).json(); importCatalog(c); } catch {}
-      save();
-    }
-    bindTabs(); bindPaste(); renderProducts(); renderPool(); renderSettings(); bindPublish(); updateStat(); updateExample();
+    S = raw ? Object.assign(defaults(), JSON.parse(raw)) : defaults();
+    // Always look at the live catalog: the phone→GitHub sync may have changed it since last time
+    try {
+      const live = await fetchLive("catalog.json");
+      if (!S.dirty) { importCatalog(live); S.liveUpdated = live.updated || ""; }
+      else if ((live.updated || "") > (S.liveUpdated || "")) showLiveBanner(live);
+      try { const rv = await fetchLive("review.json"); S.review = rv.items || []; } catch {}
+      try { const ru = await fetchLive("rules.json"); if (!S.dirty && ru.markup) { S.markup = ru.markup; S.minPrice = ru.minPrice || 500; } } catch {}
+    } catch {}
+    save(false);
+    bindTabs(); bindPaste(); renderProducts(); renderPool(); renderSettings(); bindPublish(); updateStat(); updateExample(); renderReview();
   }
   function importCatalog(c) {
     S.shop = Object.assign(S.shop, c.shop || {});
-    S.products = (c.products || []).map((p) => ({ ...p, cost: p.cost ?? null, priceLocked: true }));
+    S.products = (c.products || []).map((p) => ({ ...p, cost: S.costs[p.id] ?? null, priceLocked: !!(p.locked ?? p.priceLocked) }));
+    S.liveUpdated = c.updated || "";
+  }
+  function showLiveBanner(live) {
+    const b = document.createElement("div"); b.className = "notice"; b.style.margin = "0 0 12px";
+    b.innerHTML = `📲 網上 catalog 已經由自動同步更新（${esc(live.updated)}），而你本機有未發佈嘅修改。 <button class="btn sm primary" id="bannerLoad">載入最新（放棄本機修改）</button> <button class="btn sm" id="bannerKeep">保留本機，稍後發佈會覆蓋</button>`;
+    $("main").prepend(b);
+    $("#bannerLoad").onclick = () => { importCatalog(live); S.dirty = false; save(false); b.remove(); renderProducts(); renderSettings(); toast("已載入最新"); };
+    $("#bannerKeep").onclick = () => b.remove();
   }
   function updateStat() { const n = S.products.filter((p) => !p.hidden).length; $("#statCount").textContent = `${n} 件上架 / ${S.products.length} 總數`; }
 
@@ -64,12 +81,13 @@
     if (Number(m.tail)) { v = Math.floor(v / 10) * 10 + Number(m.tail); if (v < cost) v += 10; }
     return Math.round(v);
   }
-  function readMarkup() { S.markup = { mode: $("#mkMode").value, value: +$("#mkValue").value || 0, round: +$("#mkRound").value, tail: +$("#mkTail").value }; save(); updateExample(); }
+  function readMarkup() { S.markup = { mode: $("#mkMode").value, value: +$("#mkValue").value || 0, round: +$("#mkRound").value, tail: +$("#mkTail").value }; S.minPrice = +$("#minPrice").value || 500; save(); updateExample(); }
   function updateExample() {
+    $("#minPrice").value = S.minPrice || 500;
     $("#mkMode").value = S.markup.mode; $("#mkValue").value = S.markup.value; $("#mkRound").value = S.markup.round; $("#mkTail").value = S.markup.tail || 0;
     $("#mkExample").textContent = "$" + (sellPrice(9200) || 0).toLocaleString();
   }
-  ["mkMode", "mkValue", "mkRound", "mkTail"].forEach((id) => ($("#" + id).onchange = readMarkup));
+  ["mkMode", "mkValue", "mkRound", "mkTail", "minPrice"].forEach((id) => ($("#" + id).onchange = readMarkup));
 
   // ---------- paste / parse ----------
   let parsed = [];
@@ -85,6 +103,13 @@
     };
     $("#btnSelAll").onclick = () => { const all = parsed.every((x) => x.sel); parsed.forEach((x) => (x.sel = !all)); renderParsed(); };
     $("#btnMerge").onclick = mergeParsed;
+  }
+  function renderReview() {
+    const el = $("#reviewList"); if (!el) return;
+    el.hidden = !S.review.length;
+    el.innerHTML = `<h3>⚠️ 待審核（自動同步認唔清嘅訊息）</h3>` + S.review.map((it, i) => `<div class="row" style="margin:6px 0"><code class="grow" style="white-space:pre-wrap">${esc(it.raw)}</code><button class="btn sm" data-rv="${i}">貼入解析箱</button><button class="btn sm danger" data-rvdel="${i}">✕</button></div>`).join("");
+    $$("[data-rv]", el).forEach((b) => (b.onclick = () => { const it = S.review.splice(+b.dataset.rv, 1)[0]; $("#pasteBox").value = ($("#pasteBox").value + "\n" + it.raw).trim(); save(); renderReview(); }));
+    $$("[data-rvdel]", el).forEach((b) => (b.onclick = () => { S.review.splice(+b.dataset.rvdel, 1); save(); renderReview(); }));
   }
   function existingMatch(row) {
     return S.products.find((p) => p.brand === row.brand && p.model.toLowerCase() === row.model.toLowerCase() && (p.storage || null) === (row.storage || null));
@@ -253,33 +278,39 @@
     readSettings();
     return {
       version: 1, updated: today(), shop: S.shop,
-      products: S.products.filter((p) => !p.hidden && p.model).map(({ cost, priceLocked, raw, sender, ambiguous, ...p }) => p),
+      products: S.products.filter((p) => p.model).map(({ cost, priceLocked, raw, sender, ambiguous, ...p }) => ({ ...p, locked: !!priceLocked })),
     };
   }
+  const publicRules = () => ({ markup: S.markup, minPrice: S.minPrice || 500, autoPublish: true });
   const download = (name, text) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name; a.click(); };
   function bindPublish() {
     const g = S.github;
     $("#ghOwner").value = g.owner; $("#ghRepo").value = g.repo; $("#ghBranch").value = g.branch || "main"; $("#ghPath").value = g.path || "data/catalog.json"; $("#ghToken").value = g.token || "";
-    ["ghOwner", "ghRepo", "ghBranch", "ghPath", "ghToken"].forEach((id) => ($("#" + id).onchange = () => { S.github = { owner: $("#ghOwner").value.trim(), repo: $("#ghRepo").value.trim(), branch: $("#ghBranch").value.trim() || "main", path: $("#ghPath").value.trim() || "data/catalog.json", token: $("#ghToken").value.trim() }; save(); }));
+    ["ghOwner", "ghRepo", "ghBranch", "ghPath", "ghToken"].forEach((id) => ($("#" + id).onchange = () => { S.github = { owner: $("#ghOwner").value.trim(), repo: $("#ghRepo").value.trim(), branch: $("#ghBranch").value.trim() || "main", path: $("#ghPath").value.trim() || "data/catalog.json", token: $("#ghToken").value.trim() }; save(false); }));
     $("#btnDownload").onclick = () => download("catalog.json", JSON.stringify(publicCatalog(), null, 2));
     $("#btnBackup").onclick = () => download(`phoneshop-backup-${today()}.json`, JSON.stringify(S));
     $("#restoreInput").onchange = async (e) => { try { S = Object.assign(defaults(), JSON.parse(await e.target.files[0].text())); save(); renderProducts(); renderPool(); renderSettings(); bindPublish(); updateExample(); toast("已還原"); } catch { toast("檔案無效"); } };
-    $("#btnPullLive").onclick = async () => { try { importCatalog(await (await fetch("data/catalog.json?t=" + Date.now(), { cache: "no-store" })).json()); save(); renderProducts(); renderSettings(); toast("已載入"); } catch { toast("載入失敗"); } };
+    $("#btnPullLive").onclick = async () => { try { importCatalog(await fetchLive("catalog.json")); S.dirty = false; save(false); renderProducts(); renderSettings(); toast("已載入"); } catch { toast("載入失敗"); } };
     $("#btnPublish").onclick = publishGitHub;
   }
   async function publishGitHub() {
     const g = S.github; const st = $("#pubStatus");
     if (!g.owner || !g.repo || !g.token) { toast("請填妥 GitHub 資料同 token"); return; }
-    const url = `https://api.github.com/repos/${g.owner}/${g.repo}/contents/${g.path}`;
     const headers = { Authorization: `Bearer ${g.token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" };
+    const put = async (path, obj, msg) => {
+      const url = `https://api.github.com/repos/${g.owner}/${g.repo}/contents/${path}`;
+      let sha; const r0 = await fetch(`${url}?ref=${g.branch}`, { headers }); if (r0.ok) sha = (await r0.json()).sha;
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2) + "\n")));
+      const r = await fetch(url, { method: "PUT", headers, body: JSON.stringify({ message: msg, content, branch: g.branch, sha }) });
+      if (!r.ok) throw new Error((await r.json()).message || r.status);
+    };
     st.textContent = "發佈中…";
     try {
-      let sha;
-      const r0 = await fetch(`${url}?ref=${g.branch}`, { headers });
-      if (r0.ok) sha = (await r0.json()).sha;
-      const content = btoa(unescape(encodeURIComponent(JSON.stringify(publicCatalog(), null, 2))));
-      const r = await fetch(url, { method: "PUT", headers, body: JSON.stringify({ message: `Update catalog ${today()}`, content, branch: g.branch, sha }) });
-      if (!r.ok) throw new Error((await r.json()).message || r.status);
+      const dir = g.path.replace(/[^/]*$/, "");
+      await put(g.path, publicCatalog(), `Update catalog ${today()} [skip ci]`);
+      await put(dir + "rules.json", publicRules(), `Update rules ${today()} [skip ci]`);
+      await put(dir + "review.json", { items: S.review }, `Update review ${today()} [skip ci]`);
+      S.dirty = false; S.liveUpdated = today(); save(false);
       st.textContent = "✅ 已發佈 " + new Date().toLocaleTimeString(); toast("已發佈到 GitHub");
     } catch (e) { st.textContent = "❌ " + e.message; }
   }

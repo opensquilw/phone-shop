@@ -56,6 +56,7 @@
         <p class="help" id="parseInfo">未解析。</p>
       </div>
     </div>
+    <div class="card" style="margin-top:14px" id="reviewList" hidden></div>
     <div class="card" style="margin-top:14px" id="parsedCard" hidden>
       <div class="row flow" style="justify-content:space-between">
         <h3>解析出嘅貨品 <span class="muted small">（可以先修改，再加入）</span></h3>
@@ -123,13 +124,13 @@
       <div class="card">
         <h3>方法 A：直接發佈到 GitHub Pages</h3>
         <p class="help">喺 GitHub 建立一個 Fine-grained token（只需要呢個 repo 嘅 <code>Contents: Read and write</code> 權限），貼喺下面。Token 只會儲存喺呢部機嘅瀏覽器。</p>
-        <label>GitHub 用戶名 / 組織</label><input id="ghOwner" placeholder="opensquilw">
-        <label>Repository</label><input id="ghRepo" placeholder="phone-shop">
+        <label>GitHub 用戶名 / 組織</label><input id="ghOwner" value="opensquilw">
+        <label>Repository</label><input id="ghRepo" value="phone-shop">
         <label>Branch</label><input id="ghBranch" value="main">
         <label>檔案路徑</label><input id="ghPath" value="data/catalog.json">
         <label>Token</label><input id="ghToken" type="password" placeholder="github_pat_…" autocomplete="off">
         <div class="row" style="margin-top:12px"><button class="btn primary" id="btnPublish">🚀 發佈到 GitHub</button><span class="small muted" id="pubStatus"></span></div>
-        <p class="help" style="margin-top:8px">發佈後約 1 分鐘，客人重新開舖頭連結就會見到新價錢。</p>
+        <p class="help" style="margin-top:8px">發佈後約 1 分鐘，客人重新開舖頭連結就會見到新價錢。加價規則同待審核清單會一齊發佈，自動同步會跟你嘅規則。</p>
       </div>
       <div class="card">
         <h3>方法 B：下載檔案自己上載</h3>

@@ -1,0 +1,10 @@
+{
+  "markup": {
+    "mode": "percent",
+    "value": 8,
+    "round": 10,
+    "tail": 0
+  },
+  "minPrice": 500,
+  "autoPublish": true
+}

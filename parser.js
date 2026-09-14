@@ -46,7 +46,7 @@
   const STORAGE_VALUES = new Set([32, 64, 128, 256, 512, 1024, 2048]);
 
   // WhatsApp export prefixes:  "[14/9/2026, 10:23:45] Name: msg"  or  "14/09/2026, 10:23 - Name: msg"
-  const WA_PREFIX = /^\s*(?:\[?\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?\]?\s*(?:-\s*)?)?([^:\n]{1,40}):\s+(?=\S)/i;
+  const WA_PREFIX = /^\s*(?:\[?(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?)\]?\s*(?:-\s*)?)?([^:\n]{1,40}):\s+(?=\S)/i;
   const SYSTEM_LINE = /(joined using|added|left$|changed the (group|subject)|created group|end-to-end encrypted|<Media omitted>|image omitted|圖片已略去|已加入|已離開|訊息和通話都經過端對端加密)/i;
 
   const STOCK_RE = [
@@ -56,9 +56,20 @@
   ];
 
   function stripPrefix(line) {
+    line = line.replace(/[\u200e\u200f]/g, "").replace(/\u202f/g, " "); // iOS export marks
     const m = line.match(WA_PREFIX);
-    if (m) return { sender: m[1].trim(), text: line.slice(m[0].length) };
-    return { sender: null, text: line };
+    if (m) return { sender: m[2].trim(), ts: m[1] || null, text: line.slice(m[0].length) };
+    return { sender: null, ts: null, text: line };
+  }
+
+  // "14/9/2026, 10:23:45 PM" (d/m/y, HK) → Date or null
+  function parseTs(ts) {
+    if (!ts) return null;
+    const m = ts.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([ap]\.?m\.?)?/i);
+    if (!m) return null;
+    let [, d, mo, y, h, mi, sec, ap] = m; y = +y < 100 ? 2000 + +y : +y; h = +h;
+    if (ap) { const pm = /p/i.test(ap); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+    return new Date(y, +mo - 1, +d, h, +mi, +(sec || 0));
   }
 
   function detectBrand(text) {
@@ -140,12 +151,13 @@
     const minPrice = (opts && opts.minPrice) || 500;
     const rows = [];
     const skipped = [];
-    let ctxModel = null, ctxBrand = null, ctxStock = null;
+    let ctxModel = null, ctxBrand = null, ctxStock = null, lastTs = null;
 
     const lines = text.replace(/\r/g, "").split("\n");
     for (const rawLine of lines) {
       if (!rawLine.trim()) continue;
-      const { sender, text: body } = stripPrefix(rawLine);
+      const { sender, ts, text: body } = stripPrefix(rawLine);
+      if (ts) lastTs = ts;
       if (SYSTEM_LINE.test(body)) continue;
 
       const stock = detectStock(body);
@@ -182,12 +194,12 @@
       const stockV = stock || ctxStock || "in";
 
       if (storages.length === prices.length && storages.length > 1) {
-        storages.forEach((s, i) => rows.push(mk(brand, model, s, co.colours, prices[i], stockV, rawLine, sender)));
+        storages.forEach((s, i) => rows.push(mk(brand, model, s, co.colours, prices[i], stockV, rawLine, sender, false, lastTs)));
       } else if (prices.length === 1) {
-        storages.forEach((s) => rows.push(mk(brand, model, s, co.colours, prices[0], stockV, rawLine, sender)));
+        storages.forEach((s) => rows.push(mk(brand, model, s, co.colours, prices[0], stockV, rawLine, sender, false, lastTs)));
       } else {
         // multiple prices, unclear mapping: take the lowest as cost, keep raw for manual fix
-        rows.push(mk(brand, model, storages[0], co.colours, Math.min(...prices), stockV, rawLine, sender, true));
+        rows.push(mk(brand, model, storages[0], co.colours, Math.min(...prices), stockV, rawLine, sender, true, lastTs));
       }
       if (looksLikeModel(modelText)) { ctxModel = modelText; ctxBrand = brand; }
     }
@@ -197,14 +209,18 @@
     for (const r of rows) {
       const k = [r.brand, r.model.toLowerCase(), r.storage].join("|");
       const prev = map.get(k);
-      if (prev) { r.colours = Array.from(new Set([...prev.colours, ...r.colours])); }
+      if (prev) {
+        const a = parseTs(prev.ts), b = parseTs(r.ts);
+        if (a && b && b < a) { prev.colours = Array.from(new Set([...prev.colours, ...r.colours])); continue; } // keep newer
+        r.colours = Array.from(new Set([...prev.colours, ...r.colours]));
+      }
       map.set(k, r);
     }
     return { rows: Array.from(map.values()), skipped };
   }
 
-  function mk(brand, model, storage, colours, cost, stock, raw, sender, ambiguous) {
-    return { brand, model, storage, colours: colours.slice(), cost, stock, raw: raw.trim(), sender, ambiguous: !!ambiguous };
+  function mk(brand, model, storage, colours, cost, stock, raw, sender, ambiguous, ts) {
+    return { brand, model, storage, colours: colours.slice(), cost, stock, raw: raw.trim(), sender, ambiguous: !!ambiguous, ts: ts || null };
   }
 
   function storageLabel(v) {
@@ -212,7 +228,7 @@
     return v >= 1024 ? (v / 1024) + "TB" : v + "GB";
   }
 
-  const api = { parse, storageLabel, BRANDS: BRANDS.map((b) => b.key), COLOURS };
+  const api = { parse, parseTs, storageLabel, BRANDS: BRANDS.map((b) => b.key), COLOURS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.PhoneParser = api;
 })(typeof window !== "undefined" ? window : globalThis);
